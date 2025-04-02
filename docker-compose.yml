@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  server: 
+    build: ./back
+    container_name: backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    networks:
+      - traffic-network
+
+  sender:  
+    build: ./sender
+    container_name: sender
+    depends_on:
+      - server
+    environment:
+      - SERVER_URL=http://server:5000  
+    networks:
+      - traffic-network
+
+  frontend: 
+    build: ./front
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - traffic-network
+
+networks:
+  traffic-network:
+    driver: bridge
