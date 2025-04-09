@@ -1,14 +1,155 @@
+/* ==============================
+   BASE STYLES
+   ============================== */
 body {
     margin: 0;
     overflow: hidden;
+    background-color: black;
+    background-image:
+        radial-gradient(white, rgba(255, 255, 255, .2) 1px, transparent 2px),
+        radial-gradient(white, rgba(255, 255, 255, .15) 1px, transparent 2px),
+        radial-gradient(white, rgba(255, 255, 255, .1) 1px, transparent 2px),
+        radial-gradient(rgba(255, 255, 255, .4), rgba(255, 255, 255, .1) 2px, transparent 2px);
+    background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+    background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
-#info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+/* ==============================
+   LEFT PANEL CONTAINER
+   ============================== */
+.left-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 1000;
+    width: 300px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+/* ==============================
+   CONTROL PANEL
+   ============================== */
+.control-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 15px;
     color: white;
-    background: rgba(0, 0, 0, 0.7);
+    flex: 0 0 auto;
+}
+
+.control-group {
+    margin: 10px 0;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider {
+    width: 100%;
+    margin: 5px 0;
+}
+
+/* ==============================
+   BAR CHART
+   ============================== */
+.bar-chart {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
     padding: 10px;
-    border-radius: 5px;
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    padding: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px 8px 0 0;
+    font-size: 20px;
+}
+
+.bar-chart svg {
+    flex: 1;
+    margin-top: 5px;
+}
+
+/* ==============================
+   DATA TABLE
+   ============================== */
+.data-table {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-header {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    text-align: center;
+}
+
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.table-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* ==============================
+   COMMON COMPONENTS
+   ============================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+}
+
+th,
+td {
+    padding: 6px 8px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 20px;
+}
+
+th {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.y-axis text {
+    fill: white !important;
+    font-size: 20px;
+}
+
+.bar {
+    fill: #6A1B9A;
+    transition: fill 0.3s ease;
+}
+
+.bar:hover {
+    fill: #8E24AA;
 }

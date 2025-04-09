@@ -37,7 +37,7 @@ def send_packages(csv_path):
         # Send entire batch for this timestamp
         try:
             # In sender.py, change:
-            response = requests.post('http://server:5000/package', json=packages_by_ts[ts])
+            response = requests.post('http://backend:5000/package', json=packages_by_ts[ts])
             print(f"Sent {len(packages_by_ts[ts])} packages for {current_time} {response.status_code}")
         except Exception as e:
             print(f"Error sending batch: {e}")
