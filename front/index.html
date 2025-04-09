@@ -2,65 +2,70 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Traffic Visualizer</title>
 
     <!-- Styles -->
-    <link rel="stylesheet" type="text/css" href="static/styles.css">
+    <link rel="stylesheet" type="text/css" href="static/styles.css" />
 
     <!-- Icons -->
-    <link rel="icon" type="image/x-icon" href="static/pipet.jpg">
+    <link rel="icon" type="image/x-icon" href="static/pipet.jpg" />
 
     <!-- External Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 </head>
 
 <body>
     <!-- Main container -->
     <main class="traffic-visualizer">
-        <!-- Left panel section -->
-        <section class="left-panel-container" aria-label="Traffic visualization controls">
-            <!-- Control panel -->
-            <div class="control-panel">
-                <h3>Visualization Controls</h3>
-
-                <!-- Toggle control group -->
-                <div class="control-group">
-                    <label class="toggle-label" for="rotation-toggle">
-                        <input type="checkbox" id="rotation-toggle" checked aria-label="Toggle auto rotation">
-                        <span>Auto Rotation</span>
-                    </label>
+        <div class="layout-container">
+            <!-- Left panel section -->
+            <section class="left-panel-container" aria-label="Traffic visualization controls">
+                <!-- Control panel -->
+                <div class="control-panel">
+                    <h3>Visualization Controls</h3>
+                    <!-- Toggle control group -->
+                    <div class="control-group">
+                        <label class="toggle-label" for="rotation-toggle">
+                            <input type="checkbox" id="rotation-toggle" checked aria-label="Toggle auto rotation">
+                            <span>Auto Rotation</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Bar chart section -->
-            <section class="bar-chart" id="bar-chart" aria-label="Most active countries visualization">
-                <header class="chart-header">Most Active Countries</header>
-                <svg role="img" aria-label="Bar chart of most active countries"></svg>
+                <!-- Bar chart section -->
+                <section class="bar-chart" id="bar-chart" aria-label="Most active countries visualization">
+                    <header class="chart-header">Most Active Countries</header>
+                    <svg role="img" aria-label="Bar chart of most active countries"></svg>
+                </section>
+
+                <!-- Data table section -->
+                <section class="data-table" aria-label="Recent packages data">
+                    <header class="table-header">Recent Packages</header>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Country</th>
+                                </tr>
+                            </thead>
+                            <tbody id="package-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
             </section>
 
-            <!-- Data table section -->
-            <section class="data-table" aria-label="Recent packages data">
-                <header class="table-header">Recent Packages</header>
-
-                <!-- Table container -->
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>IP Address</th>
-                                <th>Country</th>
-                            </tr>
-                        </thead>
-                        <tbody id="package-table-body"></tbody>
-                    </table>
-                </div>
+            <!-- Main visualization area -->
+            <section class="visualization-container" id="visualization-area">
+                <!-- D3 or other content from index.js will go here -->
             </section>
-        </section>
+        </div>
 
-        <!-- JavaScript files -->
+        <!-- JavaScript -->
         <script type="module" src="index.js"></script>
     </main>
 </body>

@@ -16,6 +16,7 @@ let LATITUDE_TILT = 0;
 let countryCounts = {};
 let isRotationEnabled = true;
 let rotationSpeed = 0.15;
+
 // ==============================
 // CHART CONFIGURATION
 // ==============================
@@ -25,7 +26,7 @@ const chartConfig = {
     margin: { top: 0, right: 20, bottom: 50, left: 70 }
 };
 
-let svg, xScale, yScale; // Added missing declarations
+let svg, xScale, yScale;
 
 // ==============================
 // MAIN INITIALIZATION
@@ -33,65 +34,68 @@ let svg, xScale, yScale; // Added missing declarations
 async function init() {
     // Renderer setup
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth * 0.8, window.innerHeight); // 80% width
     renderer.setClearColor(0x000000, 0);
-    document.body.appendChild(renderer.domElement);
+
+    const rendererContainer = document.createElement('div');
+    rendererContainer.style.position = 'absolute';
+    rendererContainer.style.top = '0';
+    rendererContainer.style.left = '20%'; // Match left panel width
+    rendererContainer.style.width = '80%';
+    rendererContainer.style.height = '100%';
+    rendererContainer.appendChild(renderer.domElement);
+    document.body.appendChild(rendererContainer);
 
     // Scene setup
     scene = new THREE.Scene();
 
     // Camera setup
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(45, (window.innerWidth * 0.8) / window.innerHeight, 0.1, 1000);
     camera.position.set(3, 3, 3);
     camera.lookAt(0, 0, 0);
 
-    // Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-    scene.add(ambientLight);
-
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
     const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
     sunLight.position.set(5, 3, 5);
     scene.add(sunLight);
 
-    // Create Earth
+    // Earth
     createEarth();
 
-    // Initialize controls and data fetching
-    fetchPackages();
-    setInterval(fetchPackages, 2000);
-
-    // Orbit controls
+    // Controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 1.5;
     controls.maxDistance = 10;
 
+    // UI Events
     document.getElementById('rotation-toggle').addEventListener('change', (e) => {
         isRotationEnabled = e.target.checked;
     });
 
-
-    // Start animation
-    animate();
-
+    // Bar Chart
     initChart();
+
+    // Start fetching data
+    fetchPackages();
+    setInterval(fetchPackages, 2000);
+
+    // Animate
+    animate();
 }
 
 // ==============================
-// CHART FUNCTIONS (MOVED UP)
+// CHART FUNCTIONS
 // ==============================
 function initChart() {
     svg = d3.select("#bar-chart svg")
         .attr("width", chartConfig.width)
         .attr("height", chartConfig.height);
 
-    xScale = d3.scaleLinear()
-        .range([chartConfig.margin.left, chartConfig.width - chartConfig.margin.right]);
-
-    yScale = d3.scaleBand()
-        .range([chartConfig.height - chartConfig.margin.bottom, chartConfig.margin.top])
-        .padding(0.2);
+    xScale = d3.scaleLinear().range([chartConfig.margin.left, chartConfig.width - chartConfig.margin.right]);
+    yScale = d3.scaleBand().range([chartConfig.height - chartConfig.margin.bottom, chartConfig.margin.top]).padding(0.2);
 
     svg.append("g")
         .attr("class", "y-axis")
@@ -104,11 +108,9 @@ function updateChart() {
         .sort((a, b) => b.count - a.count);
 
     const orderedData = data.reverse();
-
     xScale.domain([0, d3.max(data, d => d.count) || 1]);
     yScale.domain(orderedData.map(d => d.country));
 
-    // Update bars
     const bars = svg.selectAll(".bar")
         .data(orderedData, d => d.country);
 
@@ -126,7 +128,6 @@ function updateChart() {
 
     bars.exit().remove();
 
-    // Update y-axis
     svg.select(".y-axis")
         .transition()
         .duration(500)
@@ -135,12 +136,11 @@ function updateChart() {
         .style("fill", "white")
         .style("font-size", "10px");
 
-    svg.selectAll(".domain").remove();
-    svg.selectAll(".tick line").remove();
+    svg.selectAll(".domain, .tick line").remove();
 }
 
 // ==============================
-// EARTH CREATION
+// EARTH + POINTS
 // ==============================
 function createEarth() {
     const textureLoader = new THREE.TextureLoader();
@@ -154,102 +154,6 @@ function createEarth() {
         })
     );
     scene.add(earth);
-}
-
-// ==============================
-// DATA HANDLING
-// ==============================
-function fetchPackages() {
-    fetch('http://localhost:5000/packages')
-        .then(response => {
-            if (!response.ok) throw new Error('Network error');
-            return response.json();
-        })
-        .then(data => {
-            const newPackages = data.slice(lastPackageCount);
-            lastPackageCount = data.length;
-
-            newPackages.forEach(pkg => {
-                // Create 3D point
-                const point = createPoint(
-                    pkg.latitude,
-                    pkg.longitude,
-                    pkg.suspicious === 1.0
-                );
-                points.push(point);
-
-                // Determine country
-                const country = getLocation(pkg.latitude, pkg.longitude);
-
-                // Update country counts for bar chart
-                countryCounts[country] = (countryCounts[country] || 0) + 1;
-
-                // Add to table
-                const tableBody = document.getElementById('package-table-body');
-                const row = document.createElement('tr');
-
-                // IP Address column
-                const ipCell = document.createElement('td');
-                ipCell.textContent = pkg.ip; // or pkg.ip depending on your data
-                ipCell.style.color = pkg.suspicious === 1.0 ? '#ff0000' : '#00ff00';
-
-                // Country column
-                const countryCell = document.createElement('td');
-                countryCell.textContent = country;
-                countryCell.style.opacity = 0.8;
-
-                row.appendChild(ipCell);
-                row.appendChild(countryCell);
-                tableBody.appendChild(row);
-            });
-
-            // Update visualization elements
-            updateChart();
-        })
-        .catch(error => console.error('Fetch error:', error));
-}
-
-// ==============================
-// POINT MANAGEMENT
-// ==============================
-function convertGeoTo3D(lat, lon) {
-    const adjustedLat = lat + LATITUDE_TILT;
-    const adjustedLon = -lon + ROTATION_OFFSET;
-
-    const phi = THREE.MathUtils.degToRad(90 - adjustedLat);
-    const theta = THREE.MathUtils.degToRad(adjustedLon);
-
-    return {
-        x: Math.sin(phi) * Math.cos(theta),
-        y: Math.cos(phi),
-        z: Math.sin(phi) * Math.sin(theta)
-    };
-}
-
-// ==============================
-// LOCATION DETERMINATION
-// ==============================
-function getLocation(lat, lon) {
-    // Approximate geographic boundaries
-    if (lat >= 24 && lat <= 49 && lon >= -125 && lon <= -66) {  // USA
-        return 'USA';
-    } else if (lat >= 50 && lat <= 60 && lon >= -10 && lon <= 2) {  // UK
-        return 'UK';
-    } else if (lat >= 47 && lat <= 55 && lon >= 5 && lon <= 15) {  // Germany
-        return 'Germany';
-    } else if (lat > 40 && lon >= 19 && lon <= 180) {  // Russia
-        return 'Russia';
-    } else if (lat >= 18 && lat <= 53 && lon >= 73 && lon <= 135) {  // China
-        return 'China';
-    } else if (lat >= 24 && lat <= 45 && lon >= 122 && lon <= 153) {  // Japan
-        return 'Japan';
-    } else if (lat >= -45 && lat <= -10 && lon >= 112 && lon <= 154) {  // Australia
-        return 'Australia';
-    } else if (lat >= 8 && lat <= 37 && lon >= 68 && lon <= 97) {  // India
-        return 'India';
-    } else {
-        return 'Other';
-    }
 }
 
 function createPoint(lat, lon, isSuspicious) {
@@ -267,12 +171,70 @@ function createPoint(lat, lon, isSuspicious) {
     point.userData = {
         origLat: lat,
         origLon: lon,
-        startTime: clock.getElapsedTime(), // Store creation time
+        startTime: clock.getElapsedTime(),
         isAnimating: true
     };
 
     earth.add(point);
     return point;
+}
+
+function convertGeoTo3D(lat, lon) {
+    const phi = THREE.MathUtils.degToRad(90 - (lat + LATITUDE_TILT));
+    const theta = THREE.MathUtils.degToRad(-lon + ROTATION_OFFSET);
+
+    return {
+        x: Math.sin(phi) * Math.cos(theta),
+        y: Math.cos(phi),
+        z: Math.sin(phi) * Math.sin(theta)
+    };
+}
+
+// ==============================
+// DATA FETCHING
+// ==============================
+function fetchPackages() {
+    fetch('http://localhost:5000/packages')
+        .then(res => res.json())
+        .then(data => {
+            const newPackages = data.slice(lastPackageCount);
+            lastPackageCount = data.length;
+
+            newPackages.forEach(pkg => {
+                const point = createPoint(pkg.latitude, pkg.longitude, pkg.suspicious === 1.0);
+                points.push(point);
+
+                const country = getLocation(pkg.latitude, pkg.longitude);
+                countryCounts[country] = (countryCounts[country] || 0) + 1;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="color: ${pkg.suspicious === 1.0 ? '#ff0000' : '#00ff00'}">${pkg.ip}</td>
+                    <td style="opacity: 0.8;">${country}</td>
+                `;
+
+                const tableBody = document.getElementById('package-table-body');
+                tableBody.appendChild(row);
+            });
+
+            updateChart();
+        })
+        .catch(console.error);
+}
+
+// ==============================
+// GEO TO COUNTRY MAPPING
+// ==============================
+function getLocation(lat, lon) {
+    if (lat >= 24 && lat <= 49 && lon >= -125 && lon <= -66) return 'USA';
+    if (lat >= 50 && lat <= 60 && lon >= -10 && lon <= 2) return 'UK';
+    if (lat >= 47 && lat <= 55 && lon >= 5 && lon <= 15) return 'Germany';
+    if (lat > 40 && lon >= 19 && lon <= 180) return 'Russia';
+    if (lat >= 18 && lat <= 53 && lon >= 73 && lon <= 135) return 'China';
+    if (lat >= 24 && lat <= 45 && lon >= 122 && lon <= 153) return 'Japan';
+    if (lat >= -45 && lat <= -10 && lon >= 112 && lon <= 154) return 'Australia';
+    if (lat >= 8 && lat <= 37 && lon >= 68 && lon <= 97) return 'India';
+    return 'Other';
 }
 
 // ==============================
@@ -283,28 +245,19 @@ function animate() {
     const delta = clock.getDelta();
     const currentTime = clock.getElapsedTime();
 
-    // Update rotation only if enabled
     if (isRotationEnabled) {
         earth.rotation.y += rotationSpeed * delta;
     }
 
-    // Animate points
     points.forEach(point => {
         const elapsed = currentTime - point.userData.startTime;
-
         if (elapsed < 3) {
-            // Calculate animation progress (0 to 1)
             const progress = elapsed / 3;
-
-            // Create pulsating effect using sine wave
-            const scaleFactor = 1 + 2 * Math.sin(progress * Math.PI);
+            const scale = 1 + 2 * Math.sin(progress * Math.PI);
             const opacity = 0.9 - 0.6 * Math.sin(progress * Math.PI);
-
-            // Apply transformations
-            point.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            point.scale.set(scale, scale, scale);
             point.material.opacity = opacity;
         } else if (point.userData.isAnimating) {
-            // Reset to original state after animation
             point.scale.set(1, 1, 1);
             point.material.opacity = 0.9;
             point.userData.isAnimating = false;
@@ -316,12 +269,15 @@ function animate() {
 }
 
 // ==============================
-// WINDOW RESIZE HANDLER
+// WINDOW RESIZE
 // ==============================
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = (window.innerWidth * 0.8) / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth * 0.8, window.innerHeight);
 });
 
+// ==============================
+// START EVERYTHING
+// ==============================
 init();
