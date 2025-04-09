@@ -7,19 +7,16 @@ import { OrbitControls } from './lib/OrbitControls.js';
 // ==============================
 // GLOBAL VARIABLES
 // ==============================
-let scene, camera, renderer, controls, earth;
+let scene, camera, renderer, controls, earth, moon;
 let clock = new THREE.Clock();
 let points = [];
 let lastPackageCount = 0;
-let ROTATION_OFFSET = 180;
+let ROTATION_OFFSET = 0;
 let LATITUDE_TILT = 0;
 let countryCounts = {};
 let isRotationEnabled = true;
 let rotationSpeed = 0.15;
 
-// ==============================
-// CHART CONFIGURATION
-// ==============================
 const chartConfig = {
     width: 280,
     height: 300,
@@ -29,60 +26,51 @@ const chartConfig = {
 let svg, xScale, yScale;
 
 // ==============================
-// MAIN INITIALIZATION
+// MAIN FUNCTION
 // ==============================
 async function init() {
-    // Renderer setup
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth * 0.8, window.innerHeight); // 80% width
+    renderer.setSize(window.innerWidth * 0.8, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
 
     const rendererContainer = document.createElement('div');
     rendererContainer.style.position = 'absolute';
     rendererContainer.style.top = '0';
-    rendererContainer.style.left = '20%'; // Match left panel width
+    rendererContainer.style.left = '20%';
     rendererContainer.style.width = '80%';
     rendererContainer.style.height = '100%';
     rendererContainer.appendChild(renderer.domElement);
     document.body.appendChild(rendererContainer);
 
-    // Scene setup
     scene = new THREE.Scene();
 
-    // Camera setup
     camera = new THREE.PerspectiveCamera(45, (window.innerWidth * 0.8) / window.innerHeight, 0.1, 1000);
     camera.position.set(3, 3, 3);
     camera.lookAt(0, 0, 0);
 
-    // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
     const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
     sunLight.position.set(5, 3, 5);
     scene.add(sunLight);
 
-    // Earth
     createEarth();
+    createMoon();
 
-    // Controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 1.5;
     controls.maxDistance = 10;
 
-    // UI Events
     document.getElementById('rotation-toggle').addEventListener('change', (e) => {
         isRotationEnabled = e.target.checked;
     });
 
-    // Bar Chart
     initChart();
 
-    // Start fetching data
     fetchPackages();
     setInterval(fetchPackages, 2000);
 
-    // Animate
     animate();
 }
 
@@ -140,15 +128,15 @@ function updateChart() {
 }
 
 // ==============================
-// EARTH + POINTS
+// EARTH + MOON + POINTS
 // ==============================
 function createEarth() {
     const textureLoader = new THREE.TextureLoader();
     earth = new THREE.Mesh(
         new THREE.SphereGeometry(1, 64, 64),
         new THREE.MeshPhongMaterial({
-            map: textureLoader.load('./static/texture.jpg'),
-            normalMap: textureLoader.load('./static/earth_normalmap_8192x4096.jpg'),
+            map: textureLoader.load('./static/earth_texture.jpg'),
+            normalMap: textureLoader.load('./static/earth_normalmap.jpg'),
             normalScale: new THREE.Vector2(0.85, 0.85),
             shininess: 25
         })
@@ -156,10 +144,24 @@ function createEarth() {
     scene.add(earth);
 }
 
+function createMoon() {
+    const textureLoader = new THREE.TextureLoader();
+    moon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 64, 64),
+        new THREE.MeshPhongMaterial({
+            map: textureLoader.load('./static/moon_texture.jpg'),
+            shininess: 25
+        })
+    );
+
+    moon.position.set(10, 0, 10);
+    scene.add(moon);
+}
+
 function createPoint(lat, lon, isSuspicious) {
     const pos = convertGeoTo3D(lat, lon);
 
-    const geometry = new THREE.SphereGeometry(0.005, 16, 16);
+    const geometry = new THREE.SphereGeometry(0.01, 16, 16);
     const material = new THREE.MeshPhongMaterial({
         color: isSuspicious ? 0xff0000 : 0x00ff00,
         transparent: true,
@@ -188,6 +190,18 @@ function convertGeoTo3D(lat, lon) {
         y: Math.cos(phi),
         z: Math.sin(phi) * Math.sin(theta)
     };
+}
+
+function getLocation(lat, lon) {
+    if (lat >= 24 && lat <= 49 && lon >= -125 && lon <= -66) return 'USA';
+    if (lat >= 50 && lat <= 60 && lon >= -10 && lon <= 2) return 'UK';
+    if (lat >= 47 && lat <= 55 && lon >= 5 && lon <= 15) return 'Germany';
+    if (lat > 40 && lon >= 19 && lon <= 180) return 'Russia';
+    if (lat >= 18 && lat <= 53 && lon >= 73 && lon <= 135) return 'China';
+    if (lat >= 24 && lat <= 45 && lon >= 122 && lon <= 153) return 'Japan';
+    if (lat >= -45 && lat <= -10 && lon >= 112 && lon <= 154) return 'Australia';
+    if (lat >= 8 && lat <= 37 && lon >= 68 && lon <= 97) return 'India';
+    return 'Other';
 }
 
 // ==============================
@@ -223,21 +237,6 @@ function fetchPackages() {
 }
 
 // ==============================
-// GEO TO COUNTRY MAPPING
-// ==============================
-function getLocation(lat, lon) {
-    if (lat >= 24 && lat <= 49 && lon >= -125 && lon <= -66) return 'USA';
-    if (lat >= 50 && lat <= 60 && lon >= -10 && lon <= 2) return 'UK';
-    if (lat >= 47 && lat <= 55 && lon >= 5 && lon <= 15) return 'Germany';
-    if (lat > 40 && lon >= 19 && lon <= 180) return 'Russia';
-    if (lat >= 18 && lat <= 53 && lon >= 73 && lon <= 135) return 'China';
-    if (lat >= 24 && lat <= 45 && lon >= 122 && lon <= 153) return 'Japan';
-    if (lat >= -45 && lat <= -10 && lon >= 112 && lon <= 154) return 'Australia';
-    if (lat >= 8 && lat <= 37 && lon >= 68 && lon <= 97) return 'India';
-    return 'Other';
-}
-
-// ==============================
 // ANIMATION LOOP
 // ==============================
 function animate() {
@@ -247,6 +246,19 @@ function animate() {
 
     if (isRotationEnabled) {
         earth.rotation.y += rotationSpeed * delta;
+    }
+
+    if (moon) {
+        const orbitRadius = Math.sqrt(
+            moon.position.x ** 2 +
+            moon.position.z ** 2
+        );
+        const angle = currentTime * 0.1;
+
+        moon.position.x = orbitRadius * Math.cos(angle);
+        moon.position.z = orbitRadius * Math.sin(angle);
+
+        moon.rotation.y += 0.002;
     }
 
     points.forEach(point => {
@@ -269,7 +281,7 @@ function animate() {
 }
 
 // ==============================
-// WINDOW RESIZE
+// EVENT HANDLERS
 // ==============================
 window.addEventListener('resize', () => {
     camera.aspect = (window.innerWidth * 0.8) / window.innerHeight;
