@@ -58,6 +58,8 @@ cd DWV_A2_mrbrtg
 docker-compose up --build
 ```
 
+**Make shure that no containers names conflicts exist!**
+
 ## Deployment
 Access the application at [localhost:8080](http://localhost:8080)
 
